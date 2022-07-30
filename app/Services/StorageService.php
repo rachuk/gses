@@ -39,6 +39,13 @@ class StorageService
      */
     public function getEmails(): array
     {
-        return explode("\n", $this->resource);
+        $emails = explode("\n", $this->resource);
+        foreach ($emails as $key => $email) {
+            if ($email == '') {
+                unset($emails[$key]);
+            }
+        }
+
+        return $emails;
     }
 }
