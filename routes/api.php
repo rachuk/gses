@@ -18,4 +18,9 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
+Route::get('/rate', 'App\Http\Controllers\RateController@getRate')->name('get.rate');
+
+Route::post('/subscribe', 'App\Http\Controllers\SubscribeController@subscribe')->name('post.subscribe');
+
+Route::post('/sendEmails', 'App\Http\Controllers\FeedbackController@send')->name('post.feedback.send');
 

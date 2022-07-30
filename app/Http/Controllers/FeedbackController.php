@@ -3,42 +3,33 @@
 namespace App\Http\Controllers;
 
 use App\Mail\FeedbackMailer;
-use Illuminate\Http\Request;
+use App\Services\CurrencyService;
+use App\Services\StorageService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Mail;
-use stdClass;
-use Codenixsv\CoinGeckoApi\CoinGeckoClient;
-use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
-class FeedbackController extends Controller {
-    public function index() {
-        return view('feedback.index');
-    }
-
-    public function send(Request $request)
+class FeedbackController extends Controller
+{
+    /**
+     * @param CurrencyService $currencyService
+     * @param StorageService $storageService
+     * @return JsonResponse
+     * @throws \Exception
+     */
+    public function send(CurrencyService $currencyService, StorageService $storageService): JsonResponse
     {
-        $request->validate([
-            'email' => 'required|email|max:100',
-        ]);
-        $client = new CoinGeckoClient();
-        $rate = $client->simple()->getPrice('0x,bitcoin', 'uah');
-        $data = new stdClass();
-        $data->email = $request->email;
-        $data->rate = '1 BTC = ' . $rate['bitcoin']['uah'] . ' UAH';
+        $rate = $currencyService->getBTCToUAH();
+        if (null !== $rate) {
+            $emails = $storageService->getEmails();
 
-        $str = Storage::disk('local')->get('mail.txt');
-            if (strripos($str, $data->email) === false) {
-                Storage::disk('local')->append('mail.txt', $data->email);
-                echo 'E-mail додано';
-            } else echo 'E-mail вже є у списку';
-
-        $arr = explode("\n", $str);
-
-        foreach ($arr as $row) {
-            if ($row != null) {
-                Mail::to($row)->send(new FeedbackMailer($data));
+            foreach ($emails as $email) {
+                Mail::to($email)->send(new FeedbackMailer($rate));
             }
+
+            return response()->json('E-mailʼи відправлено');
         }
-        return redirect()->route('feedback.index')
-            ->with('success', 'Поточний курс успішно відправлено на всі підписані електронні пошти');
+
+        throw new BadRequestHttpException('No rate for now');
     }
 }

@@ -2,9 +2,7 @@
 
 namespace App\Mail;
 
-use stdClass;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 
@@ -12,15 +10,15 @@ class FeedbackMailer extends Mailable {
 
     use Queueable, SerializesModels;
 
-    private $data;
+    private int $rate;
 
     /**
      * Create a new message instance.
      *
      * @return void
      */
-    public function __construct(stdClass $data) {
-        $this->data = $data;
+    public function __construct(int $rate) {
+        $this->rate = $rate;
     }
 
     /**
@@ -28,9 +26,10 @@ class FeedbackMailer extends Mailable {
      *
      * @return $this
      */
-    public function build() {
+    public function build(): static
+    {
         return $this->from('rachuki@ukr.net', 'Поточний курс BTC до UAH')
             ->subject('Поточний курс BTC до UAH')
-            ->view('email.feedback', ['data' => $this->data]);
+            ->view('email.feedback', ['data' => $this->rate]);
     }
 }

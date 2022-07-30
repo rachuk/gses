@@ -2,25 +2,32 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use stdClass;
+use App\Http\Requests\SubscribeRequest;
+use App\Services\StorageService;
+use Illuminate\Http\JsonResponse;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
 class SubscribeController extends Controller
 {
-    public function subscribe(Request $request)
+    /**
+     * @param SubscribeRequest $request
+     * @param StorageService $service
+     * @return JsonResponse
+     */
+    public function subscribe(SubscribeRequest $request, StorageService $service): JsonResponse
     {
-        $data = new stdClass();
-        $data->email = $request->email;
+        $validatedData = $request->validated();
 
+        if (isset($validatedData['email'])) {
+            if ($service->isEmailExist($validatedData['email'])) {
+                $service->save($validatedData['email']);
+                return response()->json('E-mail додано');
+            }
 
-        $str = Storage::disk('local')->get('mail2.txt');
-        if (strripos($str, $data->email) === false) {
-            Storage::disk('local')->append('mail2.txt', $data->email);
-            echo 'E-mail додано';
-        } else echo 'E-mail вже є у списку';
+            return response()->json('Повертати, якщо e-mail вже є в базі даних (файловій)', 409);
+        }
 
-        return view('subscribe');
+        throw new BadRequestHttpException('Invalid email');
     }
 }
 
